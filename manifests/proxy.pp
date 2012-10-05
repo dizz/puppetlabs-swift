@@ -41,7 +41,7 @@
 class swift::proxy(
   $proxy_local_net_ip,
   $port = '8080',
-  $pipeline = ['healthcheck', 'cache', 'tempauth', 'proxy-server'],
+  $pipeline = ['healthcheck', 'cache', 'tempauth', 'cdmi', 'proxy-server'],
   $workers = $::processorcount,
   $allow_account_management = true,
   $account_autocreate = true,
@@ -63,6 +63,24 @@ class swift::proxy(
     $auth_type = 'keystone'
   } else {
     warning('no auth type provided in the pipeline')
+  }
+
+  if(! member($pipeline, 'cdmi')) {
+    ensure_resource(
+      'package',  'python-pip',
+        {
+         'ensure' => 'latest'
+        }
+    )
+
+    ensure_resource(
+      'package', 'openstackcdmi',
+       {
+        'provider'  => 'pip',
+        'ensure'    => 'latest',
+        'require' => 'Package[python-pip]'
+       }
+    )    
   }
 
   if(! member($pipeline, 'proxy-server')) {
